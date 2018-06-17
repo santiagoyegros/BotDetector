@@ -19,10 +19,10 @@ from py.BotDetector.DataCollector.TwUsers import TwUser
 from py.BotDetector.DataCollector.Bot_detector import BotDetector
 
 #Credenciales de twitter 
-consumer_key = '4qFYcgtelubwkBlJaYlPYlEpa'
-consumer_secret = 'HRSUwg5QFi0rnizqNYwIgSy4CE47pVjab8PjchIppzB60jVC9U'
-access_token = '65257006-tO6cC5TVGSPmpzI3a9LO1oUEmFbKtAdY2gs9wLFnO'
-access_secret = 'E6VuPitApOi6yqYm2XgmZlBKa2BkMl7OpnkksOuNYwyUq'
+consumer_key = ''
+consumer_secret = ''
+access_token = ''
+access_secret = ''
           
 #twitter connection api
 auth = OAuthHandler(consumer_key, consumer_secret)
