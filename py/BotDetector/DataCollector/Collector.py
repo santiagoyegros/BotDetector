@@ -16,6 +16,7 @@ from tweepy import OAuthHandler
 from py.BotDetector.others import utils
 from py.BotDetector.DataCollector.DBmanager import DBmanager
 from py.BotDetector.DataCollector.TwUsers import TwUser
+from py.BotDetector.DataCollector.Bot_detector import BotDetector
 
 #Credenciales de twitter 
 consumer_key = '4qFYcgtelubwkBlJaYlPYlEpa'
@@ -26,7 +27,7 @@ access_secret = 'E6VuPitApOi6yqYm2XgmZlBKa2BkMl7OpnkksOuNYwyUq'
 #twitter connection api
 auth = OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(access_token, access_secret)
-api = tweepy.API(auth)
+api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
 
 
 def get_friends_descriptions(api, twitter_account, max_users):
@@ -63,14 +64,18 @@ def get_friends_descriptions(api, twitter_account, max_users):
             time.sleep(1000)
             following.extend(api.lookup_users(user_ids[start:end]))
     
+    print('Encontramos {} seguidores'.format(len(following)))
+    #Instance of bot_detector
+    bot_detector = BotDetector(api)
        
     #Conexion a la BD BotDetecto
-    dbm = DBmanager('TwUsers')
-    for user in following:
+    dbm = DBmanager('TwUsers-Test')
+    for i, user in enumerate(following):
        
-        #print("Usuario:" + user.screen_name + user.description)
+        print('\t [{}]Usuario:{}'.format(i, user.screen_name))
         twuser = ''
-        twuser = TwUser(utils.clear(user.name),  
+        twuser = TwUser(twitter_account,
+                        utils.clear(user.name),  
                         utils.clear(user.screen_name), 
                         user.location, 
                         user.url, 
@@ -98,18 +103,30 @@ def get_friends_descriptions(api, twitter_account, max_users):
                         user.default_profile_image,
                         utils.getattribute(user, 'withheld_in_countries'),
                         utils.getattribute(user, 'withheld_scope'),
-                        utils.clear(user.description)
+                        utils.clear(user.description), 
+                        bot_detector.creation_date(user.created_at),
+                        bot_detector.is_retweet_bot(user.screen_name), 
+                        bot_detector.default_twitter_account(user), 
+                        bot_detector.location(user), 
+                        bot_detector.followers_ratio(user),
+                        bot_detector.format_name(user)
                         )
         dbm.save_record(twuser.ToDbJson())
     
     #fin for
     
 if __name__ == "__main__":
+    start_time = time.time()
 
-    TWITTER_ACCOUNT = "santirrium"
-    MAX_USERS = 2000
+
+    TWITTER_ACCOUNT = "jualtorres"
+    MAX_USERS = 20000
 
     print ("Colectando datos...")
+    print ("Cuenta: @" + TWITTER_ACCOUNT)
     get_friends_descriptions(api, TWITTER_ACCOUNT, max_users=MAX_USERS)
     
+    print ("Evaluando datos..")
+    
     print("Fin..")
+    print("--- %s Minutos ---" % ((time.time() - start_time)/60))

@@ -4,13 +4,15 @@
 
 class TwUser(object):
 
-    def __init__(self, name, screen_name, location, url, protected, followers_count, friends_count, listed_count, favourites_count, statuses_count, created_at, 
+    def __init__(self, twitter_account, name, screen_name, location, url, protected, followers_count, friends_count, listed_count, favourites_count, statuses_count, created_at, 
                  utc_offset, profile_background_color, profile_background_image_url, profile_background_image_url_https, profile_background_tile, profile_banner_url,
                  profile_image_url, profile_image_url_https, profile_link_color, profile_sidebar_border_color, profile_sidebar_fill_color, profile_text_color,
-                 profile_use_background_image, default_profile, default_profile_image, withheld_in_countries, withheld_scope, description):
+                 profile_use_background_image, default_profile, default_profile_image, withheld_in_countries, withheld_scope, description, crit_date, 
+                 crit_rt, crit_default_account, crit_location, crit_ratio_followers, crit_screen_name):
         '''
         Constructor
         '''
+        self.twitter_account                    = twitter_account
         self.name                               = name                                 
         self.screen_name                        = screen_name                       
         self.location                           = location                          
@@ -39,11 +41,18 @@ class TwUser(object):
         self.default_profile_image              = default_profile_image             
         self.withheld_in_countries              = withheld_in_countries             
         self.withheld_scope                     = withheld_scope                    
-        self.description                        = description           
+        self.description                        = description
+        self.crit_date                          = crit_date
+        self.crit_rt                            = crit_rt
+        self.crit_default_account               = crit_default_account
+        self.crit_location                      = crit_location
+        self.crit_ratio_followers               = crit_ratio_followers
+        self.crit_screen_name                   = crit_screen_name
         
         
     def ToDbJson(self):
         return {
+            'twitter_account'                     :  self.twitter_account                    ,
             'name'                                :  self.name                               ,
             'screen_name'                         :  self.screen_name                        ,
             'location'                            :  self.location                           ,
@@ -72,5 +81,11 @@ class TwUser(object):
             'default_profile_image'               :  self.default_profile_image              ,
             'withheld_in_countries'               :  self.withheld_in_countries              ,
             'withheld_scope'                      :  self.withheld_scope                     ,
-            'description'                         :  self.description                            
+            'description'                         :  self.description                        ,
+            'crit_date'                           :  self.crit_date                          ,
+            'crit_rt'                             :  self.crit_rt                            ,
+            'crit_default_account'                :  self.crit_default_account               ,
+            'crit_location'                       :  self.crit_location                      ,
+            'crit_ratio_followers'                :  self.crit_ratio_followers               ,
+            'crit_screen_name'                    :  self.crit_screen_name                        
         }
