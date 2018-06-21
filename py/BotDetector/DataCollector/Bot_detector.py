@@ -2,10 +2,13 @@ import json
 import tweepy
 import datetime
 import re
+import logging
 from dateutil.relativedelta import relativedelta
 from py.BotDetector.DataCollector.DBmanager import DBmanager
 from _overlapped import NULL
 
+#Set log
+logging.basicConfig(filename='bot_detector.log', level=logging.INFO)
 
 class BotDetector:
     __api = None
@@ -16,20 +19,7 @@ class BotDetector:
         if(api):
             self.__api = api
         else:
-            #Credenciales de twitter 
-            consumer_key = '4qFYcgtelubwkBlJaYlPYlEpa'
-            consumer_secret = 'HRSUwg5QFi0rnizqNYwIgSy4CE47pVjab8PjchIppzB60jVC9U'
-            access_token = '65257006-tO6cC5TVGSPmpzI3a9LO1oUEmFbKtAdY2gs9wLFnO'
-            access_secret = 'E6VuPitApOi6yqYm2XgmZlBKa2BkMl7OpnkksOuNYwyUq'
-          
-            #twitter connection api
-            auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
-            auth.set_access_token(access_token, access_secret)
-            self.__api = tweepy.API(
-                auth,
-                wait_on_rate_limit=True,
-                wait_on_rate_limit_notify=True)
-
+            logging.error("Nunca deberia llegar aqui")
     def __parse_date(self, date):
         split_date = date.split(' ')
         date = {'date': ' '.join(split_date[0:3]), 'time': split_date[3],
@@ -46,7 +36,7 @@ class BotDetector:
                                  'text': status._json['text']}
                 timeline.append(timeline_data)
         except tweepy.TweepError:
-            print("No pudimos obtener el timeline de" + user)
+            logging.error("No pudimos obtener el timeline de" + user)
         return timeline
 
     # Check when the account was created
@@ -132,7 +122,7 @@ class BotDetector:
     def compute_bot_probability(self, users):
         for user in users:
             bot_score = 0
-            print('Computing the probability of the user {0}'.format(user))
+            logging.info('Computing the probability of the user {0}'.format(user))
             # Get information about the user, check
             # https://developer.twitter.com/en/docs/tweets/data-dictionary/overview/user-object
             # to understand the data of users available in the tweet
@@ -148,7 +138,7 @@ class BotDetector:
             #bot_score = bot_score + self.__default_twitter_account(data)
             #bot_score = bot_score + self.__location(data)
             #bot_score = bot_score + self.__followers_ratio(data)
-            print('There are a {0}% of probability that the user {1} would be bot'.format(
+            logging.info('There are a {0}% of probability that the user {1} would be bot'.format(
                   round((bot_score/self.__analyzed_features)*100, 2), user))
 
 

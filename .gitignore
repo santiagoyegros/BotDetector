@@ -58,3 +58,5 @@ docs/_build/
 target/
 
 py/BotDetector/DataCollector/dataSet\.csv
+
+py/BotDetector/DataCollector/config\.json

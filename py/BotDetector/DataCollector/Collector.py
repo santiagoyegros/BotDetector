@@ -12,67 +12,55 @@ from io import StringIO
 from argparse import ArgumentParser
 import tweepy
 from tweepy import OAuthHandler
+import threading
+import logging
 
 from py.BotDetector.others import utils
 from py.BotDetector.DataCollector.DBmanager import DBmanager
 from py.BotDetector.DataCollector.TwUsers import TwUser
 from py.BotDetector.DataCollector.Bot_detector import BotDetector
 
+#Set log
+logging.basicConfig(filename='bot_detector.log', level=logging.INFO)
+logging.getLogger("requests").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("oauthlib").setLevel(logging.WARNING)
+logging.getLogger("requests_oauthlib").setLevel(logging.WARNING)
+logging.getLogger("tweepy").setLevel(logging.WARNING)
+
 #Credenciales de twitter 
-consumer_key = ''
-consumer_secret = ''
-access_token = ''
-access_secret = ''
+#consumer_key = '4qFYcgtelubwkBlJaYlPYlEpa'
+#consumer_secret = 'HRSUwg5QFi0rnizqNYwIgSy4CE47pVjab8PjchIppzB60jVC9U'
+#access_token = '65257006-tO6cC5TVGSPmpzI3a9LO1oUEmFbKtAdY2gs9wLFnO'
+#access_secret = 'E6VuPitApOi6yqYm2XgmZlBKa2BkMl7OpnkksOuNYwyUq'
           
 #twitter connection api
-auth = OAuthHandler(consumer_key, consumer_secret)
-auth.set_access_token(access_token, access_secret)
-api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
+#auth = OAuthHandler(consumer_key, consumer_secret)
+#auth.set_access_token(access_token, access_secret)
+#api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
 
-
-def get_friends_descriptions(api, twitter_account, max_users):
-    """
-    Return the bios of the people that a user follows
-
-    api -- the tweetpy API object
-    twitter_account -- the Twitter handle of the user
-    max_users -- the maximum amount of users to return
-    """
-
-    user_ids = []
-
-    try:
-        for page in tweepy.Cursor(api.followers_ids, id=twitter_account, count=5000).pages():
-            user_ids.extend(page)
-
-    except tweepy.RateLimitError:
-        print ("RateLimitError...waiting 1000 seconds to continue")
-        time.sleep(1000)
-        for page in tweepy.Cursor(api.followers_ids, id=twitter_account, count=5000).pages():
-            user_ids.extend(page)
-
-    following = []
-
-    for start in range(0, min(max_users, len(user_ids)), 100):
-        end = start + 100
-
-        try:
-            following.extend(api.lookup_users(user_ids[start:end]))
-
-        except tweepy.RateLimitError:
-            print ("RateLimitError...waiting 1000 seconds to continue")
-            time.sleep(1000)
-            following.extend(api.lookup_users(user_ids[start:end]))
+def hilo_process(following_part, credential, dbm, twitter_account, start_time):
     
-    print('Encontramos {} seguidores'.format(len(following)))
-    #Instance of bot_detector
+    logging.info('Soy el hilo {} iniciadose'.format(threading.current_thread().getName()))
+    thread_name = threading.current_thread().getName()
+    
+    consumer_key = credential['consumer_key']
+    consumer_secret  = credential['consumer_secret']
+    access_token  = credential['access_token']
+    access_secret  = credential['access_secret']
+    
+    #twitter connection api
+    auth = OAuthHandler(consumer_key, consumer_secret)
+    auth.set_access_token(access_token, access_secret)
+    api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
+    
+    #Inicializet object bot detector
     bot_detector = BotDetector(api)
+    
+    #process the following_part
+    for i, user in enumerate(following_part):
        
-    #Conexion a la BD BotDetecto
-    dbm = DBmanager('TwUsers-Test')
-    for i, user in enumerate(following):
-       
-        print('\t [{}]Usuario:{}'.format(i, user.screen_name))
+        logging.info('\t [{}][{}]Usuario:{}'.format(thread_name, i, user.screen_name))
         twuser = ''
         twuser = TwUser(twitter_account,
                         utils.clear(user.name),  
@@ -109,24 +97,108 @@ def get_friends_descriptions(api, twitter_account, max_users):
                         bot_detector.default_twitter_account(user), 
                         bot_detector.location(user), 
                         bot_detector.followers_ratio(user),
-                        bot_detector.format_name(user)
+                        bot_detector.format_name(user.name)
                         )
         dbm.save_record(twuser.ToDbJson())
+        
+    logging.info('Hilo {} finalizando, tiempo total: {} Minutos'.format(thread_name, (time.time() - start_time)/60))
+
+def get_friends_descriptions(api_credentials, twitter_account, max_users, start_time):
+    """
+    Return the bios of the people that a user follows
+
+    api_credentials -- the tweetpy API credentials to create API object
+    twitter_account -- the Twitter handle of the user
+    max_users -- the maximum amount of users to return
+    """
+    #extract the first credencial
+    first_credential = api_credentials.pop(0)
     
-    #fin for
+    consumer_key = first_credential['consumer_key']
+    consumer_secret  = first_credential['consumer_secret']
+    access_token  = first_credential['access_token']
+    access_secret  = first_credential['access_secret']
+    
+    #twitter connection api
+    auth = OAuthHandler(consumer_key, consumer_secret)
+    auth.set_access_token(access_token, access_secret)
+    api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
+    
+
+    user_ids = []
+
+    try:
+        for page in tweepy.Cursor(api.followers_ids, id=twitter_account, count=5000).pages():
+            user_ids.extend(page)
+
+    except tweepy.RateLimitError:
+        logging.info ("RateLimitError...waiting 1000 seconds to continue")
+        time.sleep(1000)
+        for page in tweepy.Cursor(api.followers_ids, id=twitter_account, count=5000).pages():
+            user_ids.extend(page)
+
+    following = []
+
+    for start in range(0, min(max_users, len(user_ids)), 100):
+        end = start + 100
+
+        try:
+            following.extend(api.lookup_users(user_ids[start:end]))
+
+        except tweepy.RateLimitError:
+            logging.info ("RateLimitError...waiting 1000 seconds to continue")
+            time.sleep(1000)
+            following.extend(api.lookup_users(user_ids[start:end]))
+    
+    c_following = len(following)
+    logging.info('Encontramos {} seguidores'.format(c_following))
+    #Instance of bot_detector
+    #bot_detector = BotDetector(api)
+       
+    #Conexion a la BD BotDetecto
+    dbm = DBmanager('TwUsers-Test')
+    
+    #N threads
+    n_threads = 5
+    
+    #calc divisions
+    split = c_following // n_threads
+    init = 0
+    end = split - 1
+    
+    #run the fucking threads
+    for n in range(n_threads):
+        
+        if (n == n_threads - 1):
+            end = c_following - 1
+        
+        hilo = threading.Thread(name='Hilo%s' %n, 
+                                target=hilo_process, 
+                                args=(following[init:end], api_credentials[n], dbm, twitter_account,start_time,))
+        
+        hilo.start()
+        
+        init = end + 1
+        end = end + split - 1
+    
+    logging.info('Terminaron los hilos?')
+    
     
 if __name__ == "__main__":
+    #Set start time
     start_time = time.time()
-
-
-    TWITTER_ACCOUNT = "jualtorres"
-    MAX_USERS = 20000
-
-    print ("Colectando datos...")
-    print ("Cuenta: @" + TWITTER_ACCOUNT)
-    get_friends_descriptions(api, TWITTER_ACCOUNT, max_users=MAX_USERS)
     
-    print ("Evaluando datos..")
+    #load the inicial configuration 
+    configuration = utils.get_config(config_file = 'config.json')
+
+
+    TWITTER_ACCOUNT = "matias_baruch"
+    MAX_USERS = configuration['max_user']
+    api_credentials = configuration['api_twitter']
+
+    logging.info ("Colectando datos...")
+    logging.info ("Cuenta: @" + TWITTER_ACCOUNT)
+    get_friends_descriptions(api_credentials, TWITTER_ACCOUNT, MAX_USERS, start_time)
     
-    print("Fin..")
-    print("--- %s Minutos ---" % ((time.time() - start_time)/60))
+    #logging.info("Fin..")
+    #logging.info("--- %s Minutos ---" % ((time.time() - start_time)/60))

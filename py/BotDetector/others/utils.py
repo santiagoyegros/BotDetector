@@ -4,8 +4,17 @@
 
 import re
 import unicodedata
-#from unidecode import unidecode
+import json
+import logging
 
+#Set log
+logging.basicConfig(filename='bot_detector.log', level=logging.DEBUG)
+
+# Get configuration from file
+def get_config(config_file):
+    with open(config_file) as f:
+        config = json.loads(f.read())
+    return config
 
 def clean_emojis(doc):
     
@@ -16,9 +25,6 @@ def clean_emojis(doc):
             "\U0001F1E0-\U0001F1FF"  # flags (iOS)
             "]+")
     return emoji_pattern.sub(r'', doc)
-
-
-
 
 def deEmojify(inputString):
     returnString = ""
