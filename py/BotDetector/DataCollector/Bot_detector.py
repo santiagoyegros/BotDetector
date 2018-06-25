@@ -7,8 +7,10 @@ from dateutil.relativedelta import relativedelta
 from py.BotDetector.DataCollector.DBmanager import DBmanager
 from _overlapped import NULL
 
-#Set log
-logging.basicConfig(filename='bot_detector.log', level=logging.INFO)
+logging.basicConfig(
+    filename='bot_detector.log', 
+    level=logging.INFO, 
+    format="%(asctime)s:%(threadName)10s:%(levelname)s: %(message)s", datefmt='%d/%m/%Y %I:%M:%S %p')
 
 class BotDetector:
     __api = None
@@ -101,7 +103,12 @@ class BotDetector:
 
     # Compute the ratio between followers/friends of a given user
     def followers_ratio(self, user):
-        ratio = int(user.followers_count)/int(user.friends_count)
+        ratio = 10
+        
+        #prevent division by zero
+        if (user.friends_count != 0):
+            ratio = int(user.followers_count)/int(user.friends_count)
+        
         if ratio < 0.4:
             return 1
         else:

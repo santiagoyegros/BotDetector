@@ -21,23 +21,15 @@ from py.BotDetector.DataCollector.TwUsers import TwUser
 from py.BotDetector.DataCollector.Bot_detector import BotDetector
 
 #Set log
-logging.basicConfig(filename='bot_detector.log', level=logging.INFO)
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 logging.getLogger("oauthlib").setLevel(logging.WARNING)
 logging.getLogger("requests_oauthlib").setLevel(logging.WARNING)
 logging.getLogger("tweepy").setLevel(logging.WARNING)
-
-#Credenciales de twitter 
-#consumer_key = '4qFYcgtelubwkBlJaYlPYlEpa'
-#consumer_secret = 'HRSUwg5QFi0rnizqNYwIgSy4CE47pVjab8PjchIppzB60jVC9U'
-#access_token = '65257006-tO6cC5TVGSPmpzI3a9LO1oUEmFbKtAdY2gs9wLFnO'
-#access_secret = 'E6VuPitApOi6yqYm2XgmZlBKa2BkMl7OpnkksOuNYwyUq'
-          
-#twitter connection api
-#auth = OAuthHandler(consumer_key, consumer_secret)
-#auth.set_access_token(access_token, access_secret)
-#api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
+logging.basicConfig(
+    filename='bot_detector.log', 
+    level=logging.INFO, 
+    format="%(asctime)s:%(threadName)10s:%(levelname)s: %(message)s", datefmt='%d/%m/%Y %I:%M:%S %p')
 
 def hilo_process(following_part, credential, dbm, twitter_account, start_time):
     
@@ -60,7 +52,7 @@ def hilo_process(following_part, credential, dbm, twitter_account, start_time):
     #process the following_part
     for i, user in enumerate(following_part):
        
-        logging.info('\t [{}][{}]Usuario:{}'.format(thread_name, i, user.screen_name))
+        logging.info('[{}][{}]Usuario:{}'.format(thread_name, i, user.screen_name))
         twuser = ''
         twuser = TwUser(twitter_account,
                         utils.clear(user.name),  
@@ -159,7 +151,7 @@ def get_friends_descriptions(api_credentials, twitter_account, max_users, start_
     dbm = DBmanager('TwUsers-Test')
     
     #N threads
-    n_threads = 5
+    n_threads = 14
     
     #calc divisions
     split = c_following // n_threads
@@ -192,7 +184,7 @@ if __name__ == "__main__":
     configuration = utils.get_config(config_file = 'config.json')
 
 
-    TWITTER_ACCOUNT = "matias_baruch"
+    TWITTER_ACCOUNT = "jualtorres"
     MAX_USERS = configuration['max_user']
     api_credentials = configuration['api_twitter']
 

@@ -8,7 +8,10 @@ import json
 import logging
 
 #Set log
-logging.basicConfig(filename='bot_detector.log', level=logging.DEBUG)
+logging.basicConfig(
+    filename='bot_detector.log', 
+    level=logging.INFO, 
+    format="%(asctime)s:%(threadName)10s:%(levelname)s: %(message)s", datefmt='%d/%m/%Y %I:%M:%S %p')
 
 # Get configuration from file
 def get_config(config_file):
